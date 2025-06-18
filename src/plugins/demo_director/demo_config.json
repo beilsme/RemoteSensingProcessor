@@ -1,0 +1,44 @@
+{
+  "plugin_info": {
+    "name": "智能演示导演插件",
+    "version": "1.0.0",
+    "author": "Remote Sensing Team",
+    "description": "将遥感图像处理转化为电影级视觉体验"
+  },
+  "effects": {
+    "quality": "高质量",
+    "particle_count": 200,
+    "animation_speed": 5,
+    "enable_gpu_acceleration": true,
+    "enable_bloom_effect": true,
+    "enable_motion_blur": false
+  },
+  "audio": {
+    "enable_narration": true,
+    "voice_speed": 5,
+    "enable_sound_effects": true,
+    "volume": 0.7,
+    "voice_type": "female",
+    "language": "zh-CN"
+  },
+  "scenarios": {
+    "auto_load_data": true,
+    "default_duration": 300,
+    "loop_demos": false,
+    "show_progress": true,
+    "enable_interaction": true
+  },
+  "ui": {
+    "theme": "sci-fi",
+    "show_fps": false,
+    "fullscreen_mode": false,
+    "enable_shortcuts": true,
+    "show_tooltips": true
+  },
+  "performance": {
+    "enable_monitoring": true,
+    "max_fps": 60,
+    "adaptive_quality": true,
+    "memory_limit_mb": 2048
+  }
+}

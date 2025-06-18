@@ -1,0 +1,17 @@
+{
+  "name": "城市热岛效应分析",
+  "description": "展示城市温度分布和热岛效应",
+  "duration": 300,
+  "steps": [
+    {
+      "action": "load_thermal_data",
+      "duration": 30,
+      "narration": "加载城市热红外影像数据"
+    },
+    {
+      "action": "apply_heatmap",
+      "duration": 60,
+      "narration": "生成温度分布热力图"
+    }
+  ]
+}

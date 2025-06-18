@@ -1,0 +1,325 @@
+
+{
+"scenarios": {
+"urban_heat": {
+"id": "urban_heat",
+"name": "🏙️ 城市热岛效应分析",
+"description": "通过热红外影像分析城市温度分布和热岛效应",
+"category": "环境监测",
+"difficulty": "中级",
+"estimated_duration": 300,
+"data_requirements": ["thermal_infrared", "landuse_map"],
+"timeline": [
+{
+"step": 1,
+"name": "数据加载",
+"duration": 30,
+"action": "load_thermal_data",
+"params": {
+"effect": "zoom_in_from_space",
+"transition": "fade_in"
+},
+"narration": {
+"professional": "现在加载Landsat-8热红外波段数据，空间分辨率为100米。",
+"popular": "我们从太空视角看城市，红外相机能看到温度分布。",
+"business": "通过先进的卫星热成像技术，获取城市精准温度数据。"
+}
+},
+{
+"step": 2,
+"name": "热力图生成",
+"duration": 60,
+"action": "generate_heatmap",
+"params": {
+"animation": "gradient_reveal",
+"color_scheme": "thermal",
+"intensity": "high"
+},
+"narration": {
+"professional": "应用热力图算法，将亮度温度转换为地表温度分布。",
+"popular": "看！红色区域温度最高，蓝色最凉爽，城市中心明显更热。",
+"business": "热力图清晰显示温度差异，为城市规划提供科学依据。"
+}
+},
+{
+"step": 3,
+"name": "历史对比",
+"duration": 90,
+"action": "time_series_comparison",
+"params": {
+"years": ["2019", "2020", "2021", "2022", "2023"],
+"animation": "time_travel",
+"speed": "medium"
+},
+"narration": {
+"professional": "对比近5年数据，分析热岛效应演变趋势和空间扩展。",
+"popular": "时光机器启动！看看这几年城市是怎么变热的。",
+"business": "历史数据显示热岛效应持续加剧，亟需应对措施。"
+}
+},
+{
+"step": 4,
+"name": "影响因素分析",
+"duration": 60,
+"action": "factor_analysis",
+"params": {
+"factors": ["building_density", "vegetation", "water_bodies"],
+"visualization": "overlay_animation"
+},
+"narration": {
+"professional": "叠加建筑密度、植被覆盖和水体分布，分析影响因素。",
+"popular": "建筑越密集越热，绿地和水能降温，这就是科学！",
+"business": "量化分析表明：增加绿化可有效缓解热岛效应。"
+}
+},
+{
+"step": 5,
+"name": "结果报告",
+"duration": 60,
+"action": "generate_report",
+"params": {
+"charts": ["temperature_distribution", "hotspot_ranking"],
+"animation": "statistics_counter"
+},
+"narration": {
+"professional": "生成分析报告：城市中心比郊区平均高温3.8°C，建议增加绿化。",
+"popular": "市中心比郊外热了快4度！多种点树就能降温哦。",
+"business": "数据显示投资绿化建设，每年可节省降温成本约2000万元。"
+}
+}
+],
+"success_criteria": ["temperature_calculated", "hotspots_identified", "recommendations_generated"],
+"sample_data": "samples/urban_thermal.tif"
+},
+
+"vegetation_monitoring": {
+"id": "vegetation_monitoring",
+"name": "🌱 植被覆盖度监测",
+"description": "利用NDVI指数监测植被健康状况和覆盖变化",
+"category": "生态环境",
+"difficulty": "初级",
+"estimated_duration": 240,
+"data_requirements": ["multispectral", "time_series"],
+"timeline": [
+{
+"step": 1,
+"name": "多光谱数据加载",
+"duration": 30,
+"action": "load_multispectral",
+"params": {
+"bands": ["red", "nir"],
+"effect": "spectral_separation"
+},
+"narration": {
+"professional": "加载Sentinel-2多光谱数据，重点使用红光和近红外波段。",
+"popular": "卫星有特殊眼睛，能看到植物反射的不可见光。",
+"business": "采用欧空局Sentinel-2卫星数据，10米分辨率，更新周期5天。"
+}
+},
+{
+"step": 2,
+"name": "NDVI计算演示",
+"duration": 90,
+"action": "ndvi_calculation_demo",
+"params": {
+"show_formula": true,
+"step_by_step": true,
+"visualization": "band_math"
+},
+"narration": {
+"professional": "计算NDVI=(NIR-RED)/(NIR+RED)，范围-1到1，值越高植被越茂盛。",
+"popular": "用数学公式算出植物健康分数，就像给每片绿地打分。",
+"business": "NDVI是国际标准植被指数，精度高达95%以上。"
+}
+},
+{
+"step": 3,
+"name": "季节变化动画",
+"duration": 60,
+"action": "seasonal_animation",
+"params": {
+"seasons": ["spring", "summer", "autumn", "winter"],
+"transition": "morphing",
+"speed": "smooth"
+},
+"narration": {
+"professional": "展示植被物候周期：春季返青、夏季繁茂、秋季衰败、冬季休眠。",
+"popular": "春天绿芽萌发，夏天枝繁叶茂，秋天叶黄飘落，冬天休养生息。",
+"business": "物候监测为农业生产和生态管理提供精准时序信息。"
+}
+},
+{
+"step": 4,
+"name": "健康度评估",
+"duration": 60,
+"action": "health_assessment",
+"params": {
+"thresholds": {"healthy": 0.6, "moderate": 0.3, "poor": 0.1},
+"visualization": "3d_bars"
+},
+"narration": {
+"professional": "根据NDVI阈值分级：>0.6健康，0.3-0.6中等，<0.3较差。",
+"popular": "给每个区域的植物健康打分：绿色优秀，黄色一般，红色需要关注。",
+"business": "健康度评估报告为生态修复投资决策提供科学支撑。"
+}
+}
+],
+"success_criteria": ["ndvi_calculated", "seasonal_patterns_identified", "health_assessment_completed"],
+"sample_data": "samples/vegetation_time_series.tif"
+},
+
+"flood_assessment": {
+"id": "flood_assessment",
+"name": "🌊 洪水灾害评估",
+"description": "基于SAR和光学影像的洪水范围识别和损失评估",
+"category": "灾害监测",
+"difficulty": "高级",
+"estimated_duration": 280,
+"data_requirements": ["sar_data", "optical_before", "optical_after", "dem"],
+"timeline": [
+{
+"step": 1,
+"name": "灾前影像展示",
+"duration": 40,
+"action": "show_before_image",
+"params": {
+"effect": "peaceful_scene",
+"highlight": "water_bodies"
+},
+"narration": {
+"professional": "展示灾前光学影像，识别常年水体和易涝区域。",
+"popular": "这是洪水前的美丽景象，河流安静地流淌。",
+"business": "建立灾前基准数据库，为损失评估提供对比基础。"
+}
+},
+{
+"step": 2,
+"name": "暴雨过程模拟",
+"duration": 50,
+"action": "rain_simulation",
+"params": {
+"intensity": "extreme",
+"duration": 24,
+"effects": ["lightning", "wind", "accumulation"]
+},
+"narration": {
+"professional": "模拟极端降雨事件，24小时降雨量超过200mm。",
+"popular": "暴风雨来袭！电闪雷鸣，雨水疯狂地冲刷大地。",
+"business": "基于气象数据重现灾害过程，验证预警系统有效性。"
+}
+},
+{
+"step": 3,
+"name": "洪水范围识别",
+"duration": 80,
+"action": "flood_mapping",
+"params": {
+"method": "sar_analysis",
+"animation": "water_spread",
+"threshold": "automatic"
+},
+"narration": {
+"professional": "利用SAR数据识别洪水范围，水体后向散射特征明显。",
+"popular": "雷达眼睛穿透云层，清楚看到哪里被洪水淹没了。",
+"business": "SAR全天候监测能力，确保灾情评估准确及时。"
+}
+},
+{
+"step": 4,
+"name": "损失评估计算",
+"duration": 70,
+"action": "damage_calculation",
+"params": {
+"assets": ["buildings", "crops", "infrastructure"],
+"economic_model": "replacement_cost",
+"visualization": "impact_zones"
+},
+"narration": {
+"professional": "结合土地利用数据计算经济损失：建筑2.1亿，农业0.8亿。",
+"popular": "统计洪水造成的损失：房屋、农田、道路都需要修复。",
+"business": "精确损失评估为保险理赔和救灾资金分配提供依据。"
+}
+},
+{
+"step": 5,
+"name": "应急响应建议",
+"duration": 40,
+"action": "response_planning",
+"params": {
+"priorities": ["rescue", "evacuation", "recovery"],
+"resources": "optimization"
+},
+"narration": {
+"professional": "制定应急响应方案：优先救援、疏散路线、恢复重建。",
+"popular": "制定救援计划：先救人，再疏散，最后重建家园。",
+"business": "科学应急响应可减少30%的次生灾害损失。"
+}
+}
+],
+"success_criteria": ["flood_extent_mapped", "damage_assessed", "response_plan_generated"],
+"sample_data": "samples/flood_sar.tif"
+}
+},
+
+"effect_presets": {
+"sci_fi": {
+"colors": {
+"primary": "#00ff88",
+"secondary": "#0088ff",
+"accent": "#ff0088",
+"background": "#0d1421"
+},
+"particles": {
+"count": 200,
+"size_range": [2, 8],
+"life_range": [60, 180],
+"glow": true
+},
+"transitions": {
+"fade_duration": 1.0,
+"slide_speed": 0.8,
+"zoom_factor": 1.5
+}
+},
+
+"professional": {
+"colors": {
+"primary": "#2196F3",
+"secondary": "#4CAF50",
+"accent": "#FF9800",
+"background": "#263238"
+},
+"particles": {
+"count": 100,
+"size_range": [1, 4],
+"life_range": [90, 150],
+"glow": false
+},
+"transitions": {
+"fade_duration": 0.5,
+"slide_speed": 1.0,
+"zoom_factor": 1.2
+}
+}
+},
+
+"narration_templates": {
+"opening": {
+"professional": "欢迎使用{system_name}演示系统。今天我们将展示{scenario_name}的完整分析流程。",
+"popular": "大家好！今天我要给大家展示一个很有趣的{scenario_name}分析。",
+"business": "感谢各位参加{system_name}产品演示。接下来将展示{scenario_name}的强大功能。"
+},
+
+"conclusion": {
+"professional": "分析完成。{scenario_name}演示展示了系统的核心算法和分析能力。",
+"popular": "好了，{scenario_name}的神奇之旅就到这里。希望大家喜欢！",
+"business": "演示结束。{scenario_name}功能为您的业务提供了强大的分析支持。"
+},
+
+"transition": {
+"professional": "接下来进入{next_step}阶段。",
+"popular": "现在我们来看看{next_step}。",
+"business": "下面展示{next_step}的商业价值。"
+}
+}
+}
