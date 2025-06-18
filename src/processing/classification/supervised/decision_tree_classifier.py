@@ -37,7 +37,7 @@ import warnings
 from sklearn.tree import DecisionTreeClassifier as SKDecisionTree
 from sklearn.tree import export_text, export_graphviz
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from processing.classification.base_classifier import BaseClassifier
+from src.processing.classification.base_classifier import BaseClassifier
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)

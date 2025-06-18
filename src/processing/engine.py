@@ -17,6 +17,7 @@ import logging
 import os
 import sys
 import importlib.util
+from pathlib import Path
 from typing import Any, Callable, Dict
 # 任务结果类型
 from src.processing.task_result import TaskResult
@@ -110,36 +111,64 @@ class RemoteSensingEngine:
         return results
 
 
-def load_config(path: str = None) -> Any:
-    """
-    加载配置:
-      - 如果指定 YAML 文件，解析为 dict
-      - 如果指定 Python 脚本 (.py)，导入并读取 Config 对象
-      - 如果未指定，从根目录 config.py 导入
-    """
+def _load_py_config(file_path: str) -> Any:
+    """从给定 Python 文件加载配置对象。"""
+    path = Path(file_path).resolve()
+
+    # Determine module name so that relative imports inside config work
+    module_name = "config"
+    if path.name == "config.py" and path.parent.name == "src":
+        module_name = "src.config"
+
+    # Ensure project root (包含 src 的目录) 在 sys.path 中
+    project_root = path.parent.parent if path.parent.name == "src" else path.parent
+    inserted = False
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+        inserted = True
+
+    try:
+        spec = importlib.util.spec_from_file_location(module_name, str(path))
+        cfg_mod = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = cfg_mod
+        spec.loader.exec_module(cfg_mod)
+        return getattr(cfg_mod, "config", cfg_mod)
+    finally:
+        if inserted:
+            try:
+                sys.path.remove(str(project_root))
+            except ValueError:
+                pass
+
+
+def load_config(path: str | None = None) -> Any:
+    """加载配置文件。支持 YAML 或 Python 格式。"""
     if path:
         ext = os.path.splitext(path)[1].lower()
-        if ext in ('.yaml', '.yml'):
+        if ext in (".yaml", ".yml"):
             import yaml
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 cfg_dict = yaml.safe_load(f)
+
             class EngineConfig:
-                def __init__(self, d): self.__dict__.update(d)
+                def __init__(self, d):
+                    self.__dict__.update(d)
+
             return EngineConfig(cfg_dict)
-        elif ext == '.py':
-            spec = importlib.util.spec_from_file_location('config', path)
-            cfg_mod = importlib.util.module_from_spec(spec)
-            sys.modules['config'] = cfg_mod
-            spec.loader.exec_module(cfg_mod)
-            return getattr(cfg_mod, 'config', cfg_mod)
+        elif ext == ".py":
+            return _load_py_config(path)
         else:
             raise ValueError(f"不支持的配置文件格式: {ext}")
-    # 默认加载根目录下的 config.py
-    try:
-        import config as cfg_mod
-        return getattr(cfg_mod, 'config', cfg_mod)
-    except ImportError:
-        raise FileNotFoundError("未指定配置文件，且根目录缺少 config.py")
+
+    # 未指定路径时，依次搜索默认位置
+    here = Path(__file__).resolve()
+    search_dirs = [here.parents[1], here.parents[2]]  # src/, project root
+    for d in search_dirs:
+        candidate = d / "config.py"
+        if candidate.is_file():
+            return _load_py_config(str(candidate))
+
+    raise FileNotFoundError("未指定配置文件，且未找到默认 config.py")
 
 
 def run():
@@ -151,9 +180,10 @@ def run():
 
     parser = argparse.ArgumentParser(description="遥感图像处理引擎 CLI")
     parser.add_argument("--config", "-c", help="配置文件路径，YAML 或 Python 脚本")
+    from src.constants import SUPPORTED_TASKS
     parser.add_argument(
         "--task", "-t",
-        choices=list(RemoteSensingEngine(load_config()).task_registry.keys()),
+        choices=SUPPORTED_TASKS,
         help="指定单个任务，不指定则执行全流程"
     )
     args = parser.parse_args()

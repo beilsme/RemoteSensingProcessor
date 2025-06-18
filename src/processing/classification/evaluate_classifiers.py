@@ -17,7 +17,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, cohen_kappa_score, classification_report, confusion_matrix
-from processing.classification.model_manager import get_supervised_classifier
+from src.processing.classification.model_manager import get_supervised_classifier
 
 
 def evaluate_supervised_classifiers(X: np.ndarray,
