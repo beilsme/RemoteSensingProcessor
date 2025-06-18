@@ -10,8 +10,17 @@
   - 修复 save_vector_file_as 重复 driver 参数导致保存失败的问题
 """
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 import geopandas as gpd
+
+if __package__ is None or __package__ == "":
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src").is_dir():
+            sys.path.insert(0, str(parent))
+            break
 
 from src.processing.task_result import TaskResult
 from src.processing.file_operations.vector_loader import open_vector_file

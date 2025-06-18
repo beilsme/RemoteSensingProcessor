@@ -15,8 +15,17 @@
 """
 
 import os
+import sys
+from pathlib import Path
 import numpy as np
 from typing import Any, Dict, List, Optional
+
+if __package__ is None or __package__ == "":
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src").is_dir():
+            sys.path.insert(0, str(parent))
+            break
 
 from src.processing.task_result import TaskResult
 from src.processing.file_operations.file_loader import load_image

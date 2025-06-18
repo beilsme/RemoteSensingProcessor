@@ -44,7 +44,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.pipeline import Pipeline
-from processing.classification.base_classifier import BaseClassifier
+from src.processing.classification.base_classifier import BaseClassifier
 
 # 配置日志系统
 logging.basicConfig(level=logging.INFO)

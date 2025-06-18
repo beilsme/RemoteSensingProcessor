@@ -41,7 +41,7 @@ import time
 
 from scipy.linalg import det, inv, LinAlgError
 from scipy.stats import multivariate_normal
-from processing.classification.base_classifier import BaseClassifier
+from src.processing.classification.base_classifier import BaseClassifier
 
 # 配置日志系统
 logging.basicConfig(level=logging.INFO)

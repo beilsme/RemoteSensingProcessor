@@ -13,10 +13,19 @@
 
 import os
 import pickle
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 from PIL import Image
+
+if __package__ is None or __package__ == "":
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src").is_dir():
+            sys.path.insert(0, str(parent))
+            break
 
 from src.processing.task_result import TaskResult
 

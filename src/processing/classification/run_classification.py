@@ -11,7 +11,17 @@
     - 修正传入 data 中路径类型的 features 和 labels 时，自动加载为 numpy.ndarray
 """
 
+import sys
+from pathlib import Path
 from typing import Any, Dict, List
+
+if __package__ is None or __package__ == "":
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src").is_dir():
+            sys.path.insert(0, str(parent))
+            break
+
 from src.processing.task_result import TaskResult
 from src.processing.classification.model_manager import create_classifier_pipeline, compare_classifiers
 

@@ -11,14 +11,15 @@
 较上一版改进:
   1. 修改测试数据目录为 data/test_data；
 """
-import os
+from pathlib import Path
 
-# 项目根目录
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-# 测试数据目录：请在项目根目录下创建 data/test_data 文件夹
-TEST_DATA_DIR = os.path.join(BASE_DIR, "data", "test_data")
+# 项目根目录（src 上一级）
+ROOT_DIR = Path(__file__).resolve().parent
+BASE_DIR = str(ROOT_DIR)
+# 测试数据目录：位于 src/data/test_data
+TEST_DATA_DIR = str(ROOT_DIR / "data" / "test_data")
 # 默认结果输出目录
-OUTPUT_DIR = os.path.join(BASE_DIR, "results")
+OUTPUT_DIR = str(ROOT_DIR / "results")
 
 # 其他常量
 SUPPORTED_TASKS = [
