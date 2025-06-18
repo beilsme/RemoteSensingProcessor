@@ -16,3 +16,4 @@ PyYAML
 pydantic
 scikit-image
 opencv-python
+psutil

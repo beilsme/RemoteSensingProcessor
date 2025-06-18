@@ -1,0 +1,17 @@
+{
+  "name": "植被覆盖度监测",
+  "description": "NDVI计算和植被健康度分析",
+  "duration": 240,
+  "steps": [
+    {
+      "action": "load_multispectral",
+      "duration": 30,
+      "narration": "加载多光谱卫星影像"
+    },
+    {
+      "action": "calculate_ndvi",
+      "duration": 90,
+      "narration": "计算归一化植被指数"
+    }
+  ]
+}
