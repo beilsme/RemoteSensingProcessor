@@ -17,7 +17,7 @@ import torch
 from segmentation_models_pytorch import Unet
 
 from torch.utils.tensorboard import SummaryWriter
-from base_classifier import BaseClassifier
+from src.processing.classification.base_classifier import BaseClassifier
 
 class SegModelsClassifier(BaseClassifier):
     """
