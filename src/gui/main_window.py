@@ -16,9 +16,11 @@
 import sys
 import os
 from PyQt6 import uic
-from PyQt6.QtWidgets import QApplication, QMainWindow
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QProgressDialog
+)
+from src.workers.display_worker import DisplayWorker
 from src.processing.task_manager import TaskManager
-from src.workers.processing_worker import ProcessingWorker
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -27,8 +29,13 @@ class MainWindow(QMainWindow):
         ui_path = os.path.join(os.path.dirname(__file__), 'ui', 'main_window.ui')
         uic.loadUi(ui_path, self)
 
-        # 初始化任务管理器
-        self.task_manager = TaskManager(self)
+        # 初始化任务管理器（加载默认配置）
+        self.task_manager = TaskManager()
+
+        # 进度对话框
+        self.progressDialog = QProgressDialog(self)
+        self.progressDialog.setAutoClose(False)
+        self.progressDialog.setLabelText("准备中…")
 
         # 统一加载所有菜单动作的槽
         # 示例：波段提取
@@ -42,22 +49,20 @@ class MainWindow(QMainWindow):
         dlg = BandExtractionDialog(self)
         if dlg.exec() != dlg.Accepted:
             return
-        params = dlg.get_parameters()
-        in_path = dlg.get_input_path()
-        out_path = dlg.get_output_path()
+        input_paths, bands, out_path = dlg.get_data()
+        params = {
+            "paths": input_paths,
+            "bands": bands,
+            "output_dir": out_path,
+        }
 
         # 构造后端任务
-        worker = ProcessingWorker(
-            module=__import__('src.processing.image_display.band_extraction', fromlist=['run_band_extraction']),
-            func_name='run_band_extraction',
-            args=(in_path, params, out_path),
-            kwargs={}
-        )
-        worker.signals.progress.connect(self.progressDialog.setValue)
-        worker.signals.finished.connect(lambda: self._on_task_complete("波段提取", out_path))
+        worker = DisplayWorker(params=params)
+        worker.progress.connect(self.progressDialog.setLabelText)
+        worker.finished.connect(lambda res: self._on_task_complete("波段提取", out_path))
 
         # 提交任务
-        self.task_manager.start(worker)
+        worker.start()
         self.progressDialog.setWindowTitle("波段提取中…")
         self.progressDialog.show()
 
