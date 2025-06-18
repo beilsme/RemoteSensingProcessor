@@ -12,8 +12,17 @@
   2. 自动读取 config.file_operation_params.output_dir 作为源目录；
 """
 import os
+import sys
+from pathlib import Path
 import shutil
 from typing import Any, List
+
+if __package__ is None or __package__ == "":
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src").is_dir():
+            sys.path.insert(0, str(parent))
+            break
 
 from src.processing.task_result import TaskResult
 

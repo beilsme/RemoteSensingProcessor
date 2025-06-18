@@ -42,7 +42,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
-from processing.classification.base_classifier import BaseClassifier
+from src.processing.classification.base_classifier import BaseClassifier
 
 # 配置日志系统
 logging.basicConfig(level=logging.INFO)
