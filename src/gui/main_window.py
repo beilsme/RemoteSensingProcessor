@@ -28,13 +28,13 @@ from PyQt6.QtWidgets import (
 )
 from functools import partial
 from PyQt6.QtCore import QThread
-from RemoteSensingProcessor.src.workers.display_worker import DisplayWorker
-from RemoteSensingProcessor.src.workers.processing_worker import ProcessingWorker
-from RemoteSensingProcessor.src.workers.file_worker import FileWorker
-from RemoteSensingProcessor.src.workers.file_saver_worker import FileSaverWorker
-from RemoteSensingProcessor.src.workers.vector_worker import VectorWorker
-from RemoteSensingProcessor.src.processing.task_manager import TaskManager
-from RemoteSensingProcessor.src.processing.task_result import TaskResult
+from src.workers.display_worker import DisplayWorker
+from src.workers.processing_worker import ProcessingWorker
+from src.workers.file_worker import FileWorker
+from src.workers.file_saver_worker import FileSaverWorker
+from src.workers.vector_worker import VectorWorker
+from src.processing.task_manager import TaskManager
+from src.processing.task_result import TaskResult
 
 class MainWindow(QMainWindow):
     def __init__(self):
