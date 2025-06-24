@@ -149,17 +149,14 @@ def load_config(path: str | None = None) -> Any:
             import yaml
             with open(path, "r", encoding="utf-8") as f:
                 cfg_dict = yaml.safe_load(f)
-
             class EngineConfig:
                 def __init__(self, d):
                     self.__dict__.update(d)
-
             return EngineConfig(cfg_dict)
         elif ext == ".py":
             return _load_py_config(path)
         else:
             raise ValueError(f"不支持的配置文件格式: {ext}")
-
     # 未指定路径时，依次搜索默认位置
     here = Path(__file__).resolve()
     search_dirs = [here.parents[1], here.parents[2]]  # src/, project root

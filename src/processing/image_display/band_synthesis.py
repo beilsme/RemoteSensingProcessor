@@ -7,21 +7,27 @@
 # 创建时间：2025-06-17
 # 最后修改时间：2025-06-17
 # ===============================================
-
+from __future__ import annotations
+import sys
+from pathlib import Path
+from typing import Tuple
 import numpy as np
-from typing import List, Tuple
-from osgeo import gdal
+import rasterio
+if __package__ is None or __package__ == "":
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "src").is_dir():
+            sys.path.insert(0, str(parent))
+            break
 
 class BandSynthesis:
     """
     波段合成器，支持真彩色、假彩色等波段合成方案
     """
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str) -> None:
         self.filepath = filepath
-        self.dataset = gdal.Open(filepath)
-        if self.dataset is None:
-            raise FileNotFoundError(f"无法打开文件: {filepath}")
-        self.band_count = self.dataset.RasterCount
+        self.dataset = rasterio.open(filepath)
+        self.band_count = self.dataset.count
 
     def synthesize(self, band_indices: Tuple[int, int, int]) -> np.ndarray:
         """
@@ -31,29 +37,26 @@ class BandSynthesis:
         """
         if any(b < 1 or b > self.band_count for b in band_indices):
             raise ValueError(f"波段编号超出范围(1-{self.band_count})")
-        img = []
-        for b in band_indices:
-            band = self.dataset.GetRasterBand(b)
-            arr = band.ReadAsArray()
-            img.append(arr)
-        img = np.stack(img, axis=-1)
-        # 归一化到0-255 uint8
-        img = self._normalize_to_uint8(img)
-        return img
+        data = self.dataset.read(band_indices)
+        data = self._normalize_to_uint8(data)
+        return np.transpose(data, (1, 2, 0))
 
-    def _normalize_to_uint8(self, arr: np.ndarray) -> np.ndarray:
-        arr_min = arr.min(axis=(0,1), keepdims=True)
-        arr_max = arr.max(axis=(0,1), keepdims=True)
+    @staticmethod
+    def _normalize_to_uint8(arr: np.ndarray) -> np.ndarray:
+        arr_min = arr.min(axis=(1, 2), keepdims=True)
+        arr_max = arr.max(axis=(1, 2), keepdims=True)
         arr = (arr - arr_min) / (arr_max - arr_min + 1e-8) * 255
-        return arr.astype(np.uint8)
-
-    def close(self):
-        self.dataset = None
+        return arr.clip(0, 255).astype(np.uint8)
+    
+    def close(self) -> None:
+        self.dataset.close()
 
 # ===============================================
 # 预留接口（供系统UI调用）
 # ===============================================
-def synthesize_band(filepath: str, rgb_bands: Tuple[int, int, int]) -> np.ndarray:
+def synthesize_band(
+    filepath: str, rgb_bands: Tuple[int, int, int]
+) -> np.ndarray:
     """
     外部接口：波段合成
     :param filepath: 文件路径
@@ -71,11 +74,12 @@ def synthesize_band(filepath: str, rgb_bands: Tuple[int, int, int]) -> np.ndarra
 # 单元测试
 # ===============================================
 if __name__ == "__main__":
-    test_file = "AA"
-    # 真彩色例：Landsat8为(4,3,2)，假彩色例：(5,4,3)
-    test_rgb = (4, 3, 2)
+    test_file = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("AA.tif")
+    bands = (4, 3, 2)
+    if len(sys.argv) >= 4:
+        bands = tuple(map(int, sys.argv[2:5]))  # type: ignore[arg-type]
     try:
-        synth_img = synthesize_band(test_file, test_rgb)
-        print(f"合成图像shape: {synth_img.shape}, dtype: {synth_img.dtype}")
-    except Exception as e:
-        print(f"测试失败: {e}")
+        result = synthesize_band(str(test_file), bands)
+        print(f"合成图像shape: {result.shape}, dtype: {result.dtype}")
+    except Exception as exc:  # pragma: no cover - manual usage
+        print(f"测试失败: {exc}")

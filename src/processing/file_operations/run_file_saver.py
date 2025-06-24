@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 import shutil
 from typing import Any, List
-
 if __package__ is None or __package__ == "":
     current = Path(__file__).resolve()
     for parent in current.parents:

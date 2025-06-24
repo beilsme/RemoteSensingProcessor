@@ -107,7 +107,7 @@ def hierarchical_feature_fusion(
             L2.append((g5-g5.min())/(g5.ptp()+1e-10))
     L2 = np.stack(L2, axis=-1) if L2 else np.zeros((1,1,1),dtype=np.float32)
 
-    return {'level_1': L1, 'level_2': L2}
+    return {'level_1': L1, 'level_2': L2}   
 
 def add_spatial_context(
         arr: np.ndarray,

@@ -12,6 +12,7 @@
   1. 修改 run 接口，新增 input_dir 参数以支持目录批量处理；
   2. 去除 input_paths，改为遍历 input_dir 下所有 .tif/.tiff 文件；
   3. 增加 options 参数用于图像加载可选项；
+  4. 新增 input_paths 可选参数，可直接指定文件列表
 """
 
 import os
@@ -19,7 +20,6 @@ import sys
 from pathlib import Path
 import numpy as np
 from typing import Any, Dict, List, Optional
-
 if __package__ is None or __package__ == "":
     current = Path(__file__).resolve()
     for parent in current.parents:
@@ -33,8 +33,10 @@ from src.processing.file_operations.file_loader import load_image
 
 def run(
         config: Any,
-        input_dir: str,
-        output_dir: str,
+       input_dir: str | None = None,
+        output_dir: str = '',
+        *,
+        input_paths: Optional[List[str]] = None,
         options: Optional[Dict[str, Any]] = None
 ) -> TaskResult:
     """
@@ -44,6 +46,7 @@ def run(
         config: 配置对象，提供 data_dir、temp_dir 等基础路径
         input_dir: 输入数据目录
         output_dir: 保存结果的输出目录
+        input_paths: 直接指定的影像文件列表（可选）
         options: 可选加载参数
 
     返回:
@@ -61,12 +64,25 @@ def run(
         msg = f"无法创建输出目录 [{output_dir}]: {e}"
         return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
 
-    # 遍历目录加载
-    for fname in os.listdir(input_dir):
-        if not fname.lower().endswith(('.tif', '.tiff')):
+    # 构建待处理文件列表
+    if input_paths:
+        file_list = input_paths
+    else:
+        if input_dir is None:
+            msg = "缺少 input_dir 或 input_paths"
+            return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        file_list = [
+            os.path.join(input_dir, f)
+            for f in os.listdir(input_dir)
+            if f.lower().endswith((".tif", ".tiff"))
+        ]
+
+    # 遍历加载
+    for fp in file_list:
+        fname = os.path.basename(fp)
+        if not fname.lower().endswith((".tif", ".tiff")):
             logs.append(f"跳过非影像文件: {fname}")
             continue
-        fp = os.path.join(input_dir, fname)
         logs.append(f"开始加载影像: {fp}")
         try:
             arr, meta = load_image(fp, options)

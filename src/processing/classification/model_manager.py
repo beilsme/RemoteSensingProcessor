@@ -11,8 +11,8 @@
 #     compare_classifiers(data: dict, config: dict) -> dict
 #     get_classifier_info(name: str) -> dict
 # 作者: 孟诣楠
-# 版本: 2.1.0
-# 最新更改时间: 2025-06-18
+# 版本: 2.0.0
+# 最新更改时间: 2025-06-17
 # 改进说明: 重大功能增强版本
 #   - 新增无监督分类器面向对象接口 (get_unsupervised_classifier)
 #   - 新增分类器信息查询功能 (get_classifier_info, list_available_classifiers)
@@ -21,10 +21,6 @@
 #   - 增强错误处理和参数验证
 #   - 添加分类器版本管理和兼容性检查
 #   - 优化工厂模式设计
-#   - 新增深度学习分割分类器支持 (seg_models_unet)
-#   - 2.1.0版本更新日志:
-#   - 更新映射以包含 SegModelsClassifier
-#   - 保持原有接口完全向后兼容
 #   - 保持原有接口向后兼容
 # -----------------------------------------
 
@@ -35,26 +31,23 @@ from typing import Dict, Any, Optional, Union, Callable, List, Tuple
 from pathlib import Path
 import warnings
 
-from processing.classification.base_classifier import BaseClassifier
+from src.processing.classification.base_classifier import BaseClassifier
 
 # 监督分类器导入
-from processing.classification.supervised.maximum_likelihood import MaximumLikelihoodClassifier
-from processing.classification.supervised.minimum_distance import MinimumDistanceClassifier
-from processing.classification.supervised.svm_classifier import SVMClassifier
-from processing.classification.supervised.decision_tree_classifier import DecisionTreeClassifier
-from processing.classification.supervised.random_forest_classifier import RandomForestClassifier
-from processing.classification.seg_models_classifier import SegModelsClassifier
-
+from src.processing.classification.supervised.maximum_likelihood import MaximumLikelihoodClassifier
+from src.processing.classification.supervised.minimum_distance import MinimumDistanceClassifier
+from src.processing.classification.supervised.svm_classifier import SVMClassifier
+from src.processing.classification.supervised.decision_tree_classifier import DecisionTreeClassifier
+from src.processing.classification.supervised.random_forest_classifier import RandomForestClassifier
 
 # 无监督分类器导入（面向对象版本）
-from processing.classification.unsupervised.kmeans import KMeansClassifier
-from processing.classification.unsupervised.dbscan import DBSCANClassifier
-from processing.classification.unsupervised.isodata import ISODATAClassifier
-
+from src.processing.classification.unsupervised.kmeans import KMeansClassifier
+from src.processing.classification.unsupervised.dbscan import DBSCANClassifier
+from src.processing.classification.unsupervised.isodata import ISODATAClassifier
 # 无监督分类函数导入（兼容版本）
-from processing.classification.unsupervised.kmeans import unsupervised_kmeans_classification
-from processing.classification.unsupervised.dbscan import unsupervised_dbscan_classification
-from processing.classification.unsupervised.isodata import unsupervised_isodata_classification
+from src.processing.classification.unsupervised.kmeans import unsupervised_kmeans_classification
+from src.processing.classification.unsupervised.dbscan import unsupervised_dbscan_classification
+from src.processing.classification.unsupervised.isodata import unsupervised_isodata_classification
 
 # 配置日志系统
 logging.basicConfig(level=logging.INFO)
@@ -101,14 +94,6 @@ SUPERVISED_CLASSIFIERS = {
         'category': 'ensemble',
         'features': ['ensemble_learning', 'feature_importance', 'oob_score', 'hyperparameter_optimization'],
         'recommended_use': ['complex_classification_tasks', 'noisy_data', 'feature_selection']
-    },
-    'seg_models_unet': {
-        'class': SegModelsClassifier,
-        'version': '1.0.1',
-        'description': '基于 Segmentation Models PyTorch 的 U-Net 分割分类器',
-        'category': 'deep_learning',
-        'features': [ 'train', 'predict','load_model','early_stop','tensorboard_logging'],
-        'recommended_use': ['high_resolution_segmentation', 'deep_learning_pipeline']
     }
 }
 

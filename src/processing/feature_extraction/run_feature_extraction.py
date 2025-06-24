@@ -20,7 +20,6 @@ from pathlib import Path
 import argparse
 import numpy as np
 import rasterio
-
 if __package__ is None or __package__ == "":
     current = Path(__file__).resolve()
     for parent in current.parents:
@@ -141,7 +140,9 @@ def run(input_files: List[str], output_dir: str) -> TaskResult:
             logs.append("计算 GLCM, LBP, Gabor")
 
         # PCA
-        comps, var_ratio, _ = perform_pca(list(band_arrays.values()), n_components=3)
+        comps, var_ratio, pca_model = perform_pca(list(band_arrays.values()), n_components=3)
+
+
         results['pca'] = comps
         results['pca_variance_ratio'] = var_ratio
         logs.append("执行 PCA")

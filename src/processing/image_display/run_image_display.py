@@ -19,7 +19,6 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from PIL import Image
-
 if __package__ is None or __package__ == "":
     current = Path(__file__).resolve()
     for parent in current.parents:

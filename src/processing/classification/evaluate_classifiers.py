@@ -20,6 +20,7 @@ from sklearn.metrics import accuracy_score, cohen_kappa_score, classification_re
 from src.processing.classification.model_manager import get_supervised_classifier
 
 
+
 def evaluate_supervised_classifiers(X: np.ndarray,
                                     y: np.ndarray,
                                     classifier_names: list = None,

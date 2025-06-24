@@ -185,7 +185,7 @@ def cut_image_by_vector(filepath: str, vector_path: str, out_path: Optional[str]
 # 单元测试
 # ===============================================
 if __name__ == "__main__":
-    test_file = "example.tif"
+    test_file = "sample.tif"
     # 测试像素窗口裁剪
     try:
         cut = cut_image(test_file, 0, 0, 100, 100)

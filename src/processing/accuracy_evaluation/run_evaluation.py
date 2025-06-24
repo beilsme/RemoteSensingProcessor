@@ -16,14 +16,12 @@ from pathlib import Path
 import numpy as np
 from typing import Any, Dict, Optional, List
 # 延迟导入 TaskResult 避免循环依赖
-
 if __package__ is None or __package__ == "":
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "src").is_dir():
             sys.path.insert(0, str(parent))
             break
-
 from src.processing.task_result import TaskResult
 
 from src.processing.accuracy_evaluation.sample_verification import extract_valid_samples
@@ -69,7 +67,7 @@ def run(
         logs.append(f"创建输出目录: {output_dir}")
     except Exception as e:
         msg = f"无法创建输出目录 [{output_dir}]: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     # 1. 加载分类图和 ROI 掩膜
     try:
@@ -81,7 +79,7 @@ def run(
         logs.append(f"加载分类图: {class_map_path}")
     except Exception as e:
         msg = f"加载分类图失败: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     try:
         if roi_mask_path.endswith('.npy'):
@@ -93,7 +91,7 @@ def run(
         logs.append(f"加载 ROI 掩膜: {roi_mask_path}")
     except Exception as e:
         msg = f"加载 ROI 掩膜失败: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     # 2. 提取有效样本
     try:
@@ -101,7 +99,7 @@ def run(
         logs.append(f"提取有效样本: {len(y_true)} 个")
     except Exception as e:
         msg = f"提取有效样本失败: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[logs, msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     # 3. 计算混淆矩阵
     try:
@@ -113,7 +111,7 @@ def run(
         outputs.append(cm_path)
     except Exception as e:
         msg = f"混淆矩阵计算或绘图失败: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     # 4. 计算总体精度和 Kappa
     try:
@@ -123,7 +121,7 @@ def run(
         logs.append(f"Kappa 系数: {kappa:.4f}")
     except Exception as e:
         msg = f"OA/Kappa 计算失败: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     # 5. 生成评估报告
     try:
@@ -139,7 +137,7 @@ def run(
         outputs.append(report_path)
     except Exception as e:
         msg = f"生成评估报告失败: {e}"
-        return TaskResult(status="failure", message=msg, outputs=outputs, logs=[msg])
+        return TaskResult(status="failure", message=msg, outputs=outputs, logs=logs + [msg])
 
     return TaskResult(
         status="success",

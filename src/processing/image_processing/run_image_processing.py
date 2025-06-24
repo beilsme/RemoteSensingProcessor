@@ -18,14 +18,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-
 if __package__ is None or __package__ == "":
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "src").is_dir():
             sys.path.insert(0, str(parent))
             break
-
 from src.processing.task_result import TaskResult
 
 # 引入增强函数
@@ -37,13 +35,13 @@ from src.processing.image_processing.filtering.smoothing import (
 )
 # 引入边缘检测函数
 from src.processing.image_processing.filtering.edge_detection import (
-    edge_sobel, edge_canny
+     edge_sobel, edge_canny, edge_roberts
 )
 # 引入锐化函数
 from src.processing.image_processing.filtering.sharpening import (
     sharpen_unsharp, sharpen_laplacian
 )
-
+from src.processing.image_processing.band_math import custom_expression
 # 方法映射表
 _PROCESS_FUNCS: Dict[str, Any] = {
     'equalization': hist_equalize,
@@ -53,8 +51,10 @@ _PROCESS_FUNCS: Dict[str, Any] = {
     'smooth_median': smooth_median,
     'edge_sobel': edge_sobel,
     'edge_canny': edge_canny,
+    'edge_roberts': edge_roberts,
     'sharpen_unsharp': sharpen_unsharp,
     'sharpen_laplacian': sharpen_laplacian,
+    'band_math': custom_expression,
 }
 
 
@@ -76,6 +76,8 @@ def run(
             'smooth_mean','smooth_gaussian','smooth_median',
             'edge_sobel','edge_canny',
             'sharpen_unsharp','sharpen_laplacian'
+            'sharpen_unsharp','sharpen_laplacian',
+            'band_math'
         output_dir: 保存结果目录
         options: 每个方法的参数字典
 
@@ -131,6 +133,14 @@ def run(
                         temp = np.clip((temp - temp.min()) / (temp.max() - temp.min() + 1e-8) *
                                        (o_max - o_min) + o_min, o_min, o_max)
                     arr = temp
+                elif method == 'band_math':
+                    expr = params.get('expr')
+                    if not expr:
+                        raise ValueError('missing expr')
+                    if arr.ndim == 3:
+                        arr = custom_expression(expr, *arr)
+                    else:
+                        arr = custom_expression(expr, arr)
                 else:
                     func = _PROCESS_FUNCS[method]
                     arr = func(arr, **params)
