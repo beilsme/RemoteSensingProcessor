@@ -5,13 +5,14 @@
 模块: src.gui.main_window
 功能: 使用 PyQt6 加载您在 Qt Designer 设计的 UI 文件，将前端界面与后端处理模块对接，并自动绑定信号槽
 作者: 张子涵、孟诣楠
-版本: v1.1.3
+版本: v1.1.5
 创建时间: 2025-06-10
 最近更新: 2025-06-18
 较上一版本改进:
     a) 适配用户提供的 UI 文件 main_window.ui
     b) 使用 PyQt6.uic 动态加载 .ui，无需先转换为 .py，减少迭代成本
     c) 保持接口不变，提供可单独运行测试的入口
+    d) 针对一位数组，提供更加友好的显示效果
 """
 import sys
 from pathlib import Path
@@ -91,6 +92,30 @@ def _load_array_from_pkl(path: str):
     if isinstance(obj, (list, tuple)):
         return obj[0]
     return obj
+
+def _safe_reshape_for_display(data: np.ndarray) -> np.ndarray:
+    """安全地重塑数组以用于显示"""
+    if data.ndim == 1:
+        # 尝试将一维数组重塑为正方形
+        size = int(np.sqrt(len(data)))
+        if size * size == len(data):
+            return data.reshape(size, size)
+        else:
+            # 如果不是完全平方数，创建条状图像
+            height = min(100, len(data))
+            width = len(data) // height
+            if width * height < len(data):
+                width += 1
+            # 用零填充到所需大小
+            padded = np.zeros(height * width)
+            padded[:len(data)] = data
+            return padded.reshape(height, width)
+    elif data.ndim == 2:
+        return data
+    elif data.ndim > 2:
+        # 对于高维数组，取第一个"切片"
+        return data.reshape(data.shape[-2], data.shape[-1])
+    return data
 
 class ImageViewer(QGraphicsView):
     """可缩放和拖动的图像查看器"""
@@ -1777,10 +1802,20 @@ class MainWindow(QMainWindow):
                     data = np.load(path)
                 else:
                     data = _load_array_from_pkl(path)
-                if data.ndim == 2:
+    
+                # 使用辅助函数安全地处理数组维度
+                original_shape = data.shape
+    
+                if data.ndim == 1:
+                    # 将一维数组重塑为可显示的二维数组
+                    data = _safe_reshape_for_display(data)
+                    data = data[np.newaxis, ...]  # 添加波段维度
+                elif data.ndim == 2:
                     data = data[np.newaxis, ...]
+                # data 现在应该是 (bands, height, width) 的形状
+    
                 if bands is None:
-                     bands = [1, 2, 3] if data.shape[0] >= 3 else [1]
+                    bands = [1, 2, 3] if data.shape[0] >= 3 else [1]
                 bands = [b for b in bands if 1 <= b <= data.shape[0]]
                 if not bands:
                     return None
@@ -1796,15 +1831,35 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.statusBar().showMessage(f"读取影像失败: {e}", 5000)
             return None
-
+    
         data = data.astype(float)
-        mn = data.min(axis=(1, 2), keepdims=True)
-        mx = data.max(axis=(1, 2), keepdims=True)
+    
+        # 安全地计算最小值和最大值
+        try:
+            if data.ndim == 3 and data.shape[1] > 0 and data.shape[2] > 0:
+                # 正常的三维数组 (bands, height, width)
+                mn = data.min(axis=(1, 2), keepdims=True)
+                mx = data.max(axis=(1, 2), keepdims=True)
+            else:
+                # 其他情况，使用全局最小最大值
+                mn = np.array(data.min()).reshape(1, 1, 1)
+                mx = np.array(data.max()).reshape(1, 1, 1)
+        except Exception:
+            # 如果计算失败，使用简单的全局值
+            mn = np.array(data.min()).reshape(1, 1, 1)
+            mx = np.array(data.max()).reshape(1, 1, 1)
+    
+        # 避免除零
         data = (data - mn) / (mx - mn + 1e-8)
         data = (data * 255).clip(0, 255).astype(np.uint8)
-
+    
         if data.shape[0] == 1:
             img = data[0]
+            # 确保图像至少是二维的
+            if img.ndim == 1:
+                # 创建一个简单的条状图像
+                img = np.tile(img.reshape(-1, 1), (1, 10)).T
+    
             qimg = QImage(
                 img.tobytes(),
                 img.shape[1],
@@ -1814,6 +1869,15 @@ class MainWindow(QMainWindow):
             )
         else:
             img = np.ascontiguousarray(np.transpose(data, (1, 2, 0)))
+            # 确保图像是三维的 (height, width, channels)
+            if img.ndim == 2:
+                img = img[:, :, np.newaxis]
+            if img.shape[2] == 1:
+                img = np.repeat(img, 3, axis=2)
+            elif img.shape[2] == 2:
+                # 添加第三个通道
+                img = np.concatenate([img, img[:, :, :1]], axis=2)
+    
             qimg = QImage(
                 img.tobytes(),
                 img.shape[1],
@@ -1821,7 +1885,7 @@ class MainWindow(QMainWindow):
                 img.strides[0],
                 QImage.Format.Format_RGB888,
             )
-
+    
         pixmap = QPixmap.fromImage(qimg.copy())
         if pixmap.isNull():
             return None
