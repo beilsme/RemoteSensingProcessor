@@ -64,6 +64,7 @@ from PyQt6.QtCore import Qt, QThread, QTimer, QRectF, QPointF
 from functools import partial
 import numpy as np
 import rasterio
+import json
 from src.workers.processing_worker import ProcessingWorker
 from src.workers.file_worker import FileWorker
 from src.workers.file_saver_worker import FileSaverWorker
@@ -74,6 +75,9 @@ from src.workers.evaluation_worker import EvaluationWorker
 from shapely.geometry import Point, LineString, Polygon
 from src.processing.task_manager import TaskManager
 from src.processing.task_result import TaskResult
+from src.utils.image_utils import load_tif_as_numpy
+import tempfile
+
 
 
 def _load_array_from_pkl(path: str):
@@ -1160,12 +1164,18 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(dlg)
         class_edit = QLineEdit(dlg)
         class_edit.setPlaceholderText('class_map.npy')
+        pre_selected = self._selected_numpy_path()
+        if pre_selected:
+            class_edit.setText(pre_selected)
         class_btn = QPushButton('Browse Classification', dlg)
         roi_edit = QLineEdit(dlg)
         roi_edit.setPlaceholderText('roi_mask.npy')
         roi_btn = QPushButton('Browse ROI', dlg)
         out_edit = QLineEdit(dlg)
         out_edit.setPlaceholderText('output directory (optional)')
+        default_out = getattr(self.task_manager.config, 'evaluation_params', {}).get('output_dir')
+        if default_out:
+            out_edit.setText(default_out)
         out_btn = QPushButton('Browse Output', dlg)
         run_btn = QPushButton('Run', dlg)
         for w in (class_edit, class_btn, roi_edit, roi_btn, out_edit, out_btn, run_btn):
@@ -1175,7 +1185,7 @@ class MainWindow(QMainWindow):
         out_btn.clicked.connect(lambda: out_edit.setText(QFileDialog.getExistingDirectory(self, '选择输出目录')))
 
         def act():
-            class_map = class_edit.text().strip()
+            class_map = class_edit.text().strip() or self._selected_numpy_path()
             roi_mask = roi_edit.text().strip()
             if not class_map or not roi_mask:
                 self.statusBar().showMessage('请选择输入文件', 5000)
@@ -1186,6 +1196,8 @@ class MainWindow(QMainWindow):
             }
             if out_edit.text().strip():
                 params['output_dir'] = out_edit.text().strip()
+            elif default_out:
+                params['output_dir'] = default_out
             self.run_evaluation(params)
             dlg.accept()
 
@@ -1533,10 +1545,13 @@ class MainWindow(QMainWindow):
         if not self.current_numpy_files:
             self.statusBar().showMessage("请先加载影像文件", 5000)
             return
-        input_files = self.current_numpy_files
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage("请先在左侧选中一个文件", 5000)
+            return
         output_dir = self.task_manager.config.feature_extraction_params.get("output_dir", "")
         params = {
-            "input_files": input_files,
+            "input_files": [npy],
             "output_dir": output_dir
         }
         self.run_feature_extraction(params)
@@ -1608,9 +1623,14 @@ class MainWindow(QMainWindow):
         if index_name not in func_map:
             self.statusBar().showMessage(f'未知指数: {index_name}', 5000)
             return
-    
+
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage('请先在左侧选中一个文件', 5000)
+            return
+
         try:
-            arr = np.load(self.current_numpy_files[0])
+            arr = np.load(npy)
             if arr.ndim == 2:
                 bands = [arr]
             else:
@@ -1641,8 +1661,12 @@ class MainWindow(QMainWindow):
         if not self.current_numpy_files:
             self.statusBar().showMessage('请先加载影像文件', 5000)
             return
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage('请先在左侧选中一个文件', 5000)
+            return
         try:
-            arr = np.load(self.current_numpy_files[0])
+            arr = np.load(npy)
             if arr.ndim == 2:
                 band = arr
             else:
@@ -1685,40 +1709,93 @@ class MainWindow(QMainWindow):
         lbl_edit = QLineEdit(dlg)
         lbl_edit.setPlaceholderText('labels.npy / labels.pkl (optional)')
         lbl_btn = QPushButton('Browse Labels', dlg)
+        param_edit = QLineEdit(dlg)
+        param_edit.setPlaceholderText('extra params as JSON {"n_estimators":100}')
+        auto_box = QCheckBox('自动特征提取', dlg)
         model_box = QComboBox(dlg)
         model_box.addItems(['decision_tree','random_forest','svm','maximum_likelihood','minimum_distance','kmeans','isodata'])
         if algorithm in [model_box.itemText(i) for i in range(model_box.count())]:
             idx = [model_box.itemText(i) for i in range(model_box.count())].index(algorithm)
             model_box.setCurrentIndex(idx)
         run_btn = QPushButton('Run', dlg)
-        for w in (feat_edit, feat_btn, lbl_edit, lbl_btn, model_box, run_btn):
+        for w in (feat_edit, feat_btn, lbl_edit, lbl_btn, param_edit, auto_box, model_box, run_btn):
             layout.addWidget(w)
 
         feat_btn.clicked.connect(lambda: feat_edit.setText(QFileDialog.getOpenFileName(self, '选择 features', '', 'Feature Files (*.npy *.pkl *.pickle)')[0]))
         lbl_btn.clicked.connect(lambda: lbl_edit.setText(QFileDialog.getOpenFileName(self, '选择 labels', '', 'Label Files (*.npy *.pkl *.pickle)')[0]))
-
+        auto_box.toggled.connect(lambda s: (feat_edit.setDisabled(s), feat_btn.setDisabled(s)))
         def act():
-            feats = feat_edit.text().strip()
-            if not feats:
-                self.statusBar().showMessage('请选择特征文件', 5000)
-                return
-            data = {'features': feats}
-            if lbl_edit.text().strip():
-                data['labels'] = lbl_edit.text().strip()
-            pipeline = {'classifiers': [{'name': model_box.currentText(), 'params': {}}], 'compare': False}
-            import tempfile, os
-            out_dir = self.task_manager.config.file_operation_params['output_dir']
-            os.makedirs(out_dir, exist_ok=True)
-            tmp = tempfile.mktemp(prefix='class_', suffix='.npy', dir=out_dir)
-            params = {
-                'data': data,
-                'pipeline_config': pipeline,
-                'model': model_box.currentText(),
-                'class_map_path': tmp,
-            }
-            self.temp_files.append(tmp)
-            self.run_classification(params)
-            dlg.accept()
+            def start_classification(feat_path: str):
+                data = {'features': feat_path}
+                if lbl_edit.text().strip():
+                    data['labels'] = lbl_edit.text().strip()
+                extra = param_edit.text().strip()
+                try:
+                    params_dict = json.loads(extra) if extra else {}
+                except Exception as e:
+                    self.statusBar().showMessage(f'参数解析错误: {e}', 5000)
+                    return
+                pipeline = {
+                    'classifiers': [{'name': model_box.currentText(), 'params': params_dict}],
+                    'compare': False
+                }
+                import tempfile, os
+                out_dir = self.task_manager.config.file_operation_params['output_dir']
+                os.makedirs(out_dir, exist_ok=True)
+                tmp = tempfile.mktemp(prefix='class_', suffix='.npy', dir=out_dir)
+                params = {
+                    'data': data,
+                    'pipeline_config': pipeline,
+                    'model': model_box.currentText(),
+                    'class_map_path': tmp,
+                }
+                self.temp_files.append(tmp)
+                self.run_classification(params)
+                dlg.accept()
+
+            # ✅ 自动特征提取分支逻辑
+            if auto_box.isChecked():
+                if not self.current_numpy_files:
+                    self.statusBar().showMessage('请先加载影像文件', 5000)
+                    return
+                npy = self._selected_image_path()
+                if not npy:
+                    self.statusBar().showMessage('请先在左侧选中一个文件', 5000)
+                    return
+            
+            
+                # ✅ 若是 .tif 则自动转换并临时保存为 .npy，再调用 start_classification
+                if npy.endswith('.tif'):
+                    try:
+                        image = load_tif_as_numpy(npy)
+                        out_dir = self.task_manager.config.file_operation_params['output_dir']
+                        os.makedirs(out_dir, exist_ok=True)
+                        npy_path = tempfile.mktemp(prefix='converted_', suffix='.npy', dir=out_dir)
+                        
+                        print(f"✔️ 已将 {npy} 转换为临时特征文件: {npy_path}")
+
+                        np.save(npy_path, image)
+                        self.temp_files.append(npy_path)
+                        start_classification(npy_path)
+                        return
+                    except Exception as e:
+                        self.statusBar().showMessage(f'影像转换失败: {e}', 5000)
+                        return
+            
+                # ✅ 若是已有 .npy 特征，直接调用
+                elif npy.endswith('.npy'):
+                    start_classification(npy)
+                    return
+            
+                self.statusBar().showMessage('当前仅支持 .tif 或 .npy 影像用于自动分类', 5000)
+
+
+            else:
+                feats = feat_edit.text().strip()
+                if not feats:
+                    self.statusBar().showMessage('请选择特征文件', 5000)
+                    return
+                start_classification(feats)
 
         run_btn.clicked.connect(act)
         dlg.exec()
@@ -2133,6 +2210,28 @@ class MainWindow(QMainWindow):
             
                 self._update_file_list()
                 self._refresh_display()
+            elif title == "精度评估":
+                show_img = None
+                for out in result.outputs:
+                    ext = os.path.splitext(out)[1].lower()
+                    name = os.path.basename(out)
+                    if ext in ('.png', '.jpg', '.jpeg'):
+                        if out not in self.current_image_files:
+                            self.current_image_files.append(out)
+                            self.current_numpy_files.append('')
+                            self.temp_files.append(out)
+                        self.file_status[name] = '临时'
+                        self.file_visibility[name] = True
+                        show_img = out
+                    else:
+                        self.temp_files.append(out)
+                        self.file_status[name] = '已保存'
+                        self.file_visibility.setdefault(name, False)
+                self._update_file_list()
+                if show_img:
+                    pix = self._load_raster_pixmap(show_img)
+                    if pix:
+                        self._update_image_label(pix)
             elif title == "矢量处理":
                 for o in result.outputs:
                     if o not in self.current_vector_files:
@@ -2206,9 +2305,13 @@ class MainWindow(QMainWindow):
         if not self.current_numpy_files:
             self.statusBar().showMessage("请先加载图像", 5000)
             return
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage("请先在左侧选中一个文件", 5000)
+            return
         from src.processing.feature_extraction.pca import perform_pca
         try:
-            arr = np.load(self.current_numpy_files[0])
+            arr = np.load(npy)
             if arr.ndim == 2:
                 bands = [arr]
             else:
@@ -2224,12 +2327,16 @@ class MainWindow(QMainWindow):
         if not self.current_numpy_files:
             self.statusBar().showMessage("请先加载图像", 5000)
             return
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage("请先在左侧选中一个文件", 5000)
+            return
         from src.processing.feature_extraction.morphology import (
             calculate_morphological_features,
             calculate_filter_responses
         )
         try:
-            arr = np.load(self.current_numpy_files[0])
+            arr = np.load(npy)
             band = arr[3] if arr.ndim == 3 and arr.shape[0] >= 4 else arr[0]
             morph = calculate_morphological_features(band)
             filt  = calculate_filter_responses(band)
@@ -2243,12 +2350,16 @@ class MainWindow(QMainWindow):
         if not self.current_numpy_files:
             self.statusBar().showMessage("请先加载图像", 5000)
             return
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage("请先在左侧选中一个文件", 5000)
+            return
         from src.processing.feature_extraction.selection import (
             feature_selection_by_variance,
             calculate_multi_scale_features
         )
         try:
-            arr = np.load(self.current_numpy_files[0])
+            arr = np.load(npy)
             band = arr[3] if arr.ndim == 3 and arr.shape[0] >= 4 else arr[0]
             multiscale = calculate_multi_scale_features(band)
             selected = feature_selection_by_variance(multiscale)
@@ -2262,13 +2373,17 @@ class MainWindow(QMainWindow):
         if not self.current_numpy_files:
             self.statusBar().showMessage("请先加载图像", 5000)
             return
+        npy = self._selected_numpy_path()
+        if not npy:
+            self.statusBar().showMessage("请先在左侧选中一个文件", 5000)
+            return
         from src.processing.feature_extraction.fusion import (
             feature_fusion_for_segmentation,
             hierarchical_feature_fusion,
             add_spatial_context
         )
         try:
-            arr = np.load(self.current_numpy_files[0])
+            arr = np.load(npy)
             if arr.ndim == 2:
                 feats = {'band': arr}
             else:

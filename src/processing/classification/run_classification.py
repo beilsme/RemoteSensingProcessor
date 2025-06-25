@@ -120,6 +120,19 @@ def run(
             outputs.append(results)
             return TaskResult(status='success', message='分类比较完成', outputs=outputs, logs=logs)
 
+        # 新增: 自动展开 (H, W, D) + (H, W) 为 (N, D) + (N,)
+        from src.utils.data_adapter import extract_labeled_samples
+        if isinstance(data.get('features'), np.ndarray) and isinstance(data.get('labels'), np.ndarray):
+            try:
+                X, y = extract_labeled_samples(data['features'], data['labels'])
+                data['features'] = X
+                data['labels'] = y
+                logs.append("已将 (H, W, D) 特征与 (H, W) 掩膜标签展开为 (N, D) + (N,)")
+            except Exception as e:
+                logs.append(f"特征与标签展开失败: {e}")
+                return TaskResult(status='failure', message=str(e), outputs=[], logs=logs)
+
+
         # 创建并运行分类管道
         pipeline = create_classifier_pipeline(pipeline_config)
         logs.append(f"已创建分类管道，分类器数量: {len(pipeline_config.get('classifiers', []))}")
